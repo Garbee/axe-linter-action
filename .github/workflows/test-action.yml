@@ -1,0 +1,47 @@
+name: Test Action
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Verify the action can be built
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build action
+        run: yarn build
+
+      - name: Verify dist is up to date
+        run: |
+          if [ -n "$(git status --porcelain dist)" ]; then
+            echo "Error: dist/ is not up to date. Run 'yarn build' and commit the changes."
+            git status --porcelain dist
+            exit 1
+          fi
+
+  # Test the action runs without errors
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # The action should run successfully
+      # In this case, it will process any changed files in the PR/push
+      - name: Run action
+        uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.AXE_LINTER_API_KEY }}
