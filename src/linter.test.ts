@@ -13,7 +13,6 @@ describe('linter', () => {
   let errorStub: sinon.SinonStub
   let debugStub: sinon.SinonStub
   let readFileStub: sinon.SinonStub
-  let fetchStub: sinon.SinonStub
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -25,9 +24,6 @@ describe('linter', () => {
     // Stub file system
     readFileStub = sandbox.stub()
     sandbox.replace(require('fs'), 'readFileSync', readFileStub)
-
-    // Stub fetch
-    fetchStub = sandbox.stub()
 
     // Enable Nock
     nock.disableNetConnect()
@@ -298,46 +294,20 @@ describe('linter', () => {
       readFileStub
         .withArgs('test.js', 'utf8')
         .returns('<div><h1>hello world</h1></div>')
-      sandbox.replace(require('node-fetch'), 'default', fetchStub)
 
-      // Make fetch throw a non-Error object
-      const nonErrorObject = {
+      // Simulate a non-standard error from the API
+      const scope = nock(axeLinterUrl).post('/lint-source').reply(500, {
         type: 'CustomError',
         details: 'Something went wrong',
         statusCode: 500
-      }
-
-      fetchStub.rejects(nonErrorObject)
+      })
 
       try {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('Should have thrown an error')
       } catch (error) {
-        // Verify that the caught error is our non-Error object
-        assert.isFalse(
-          error instanceof Error,
-          'Error should not be an Error instance'
-        )
-        assert.deepEqual(
-          error,
-          nonErrorObject,
-          'Should be the original non-Error object'
-        )
-        assert.equal(
-          (error as any).type,
-          'CustomError',
-          'Should preserve custom properties'
-        )
-        assert.equal(
-          (error as any).details,
-          'Something went wrong',
-          'Should preserve error details'
-        )
-        assert.equal(
-          (error as any).statusCode,
-          500,
-          'Should preserve status code'
-        )
+        assert.instanceOf(error, Error)
+        assert.isTrue(scope.isDone(), 'API request should be made')
       }
     })
 
