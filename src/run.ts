@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs'
-import { load } from 'js-yaml'
+import { parse } from 'yaml'
 import { lintFiles } from './linter'
 import { getChangedFiles } from './git'
 import type { Core, ActionInputs } from './types'
@@ -27,7 +27,7 @@ async function run(core: Core): Promise<void> {
     let linterConfig = {}
     try {
       const configFile = readFileSync('axe-linter.yml', 'utf8')
-      const parsedConfig = load(configFile)
+      const parsedConfig = parse(configFile)
       if (parsedConfig && typeof parsedConfig === 'object') {
         linterConfig = parsedConfig
       }
