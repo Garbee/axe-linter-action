@@ -1,5 +1,5 @@
 import 'mocha'
-import { assert } from 'chai'
+import assert from 'node:assert/strict'
 import * as sinon from 'sinon'
 import * as core from '@actions/core'
 import {
@@ -120,12 +120,16 @@ describe('linter', () => {
         linterConfig
       )
 
-      assert.equal(errorCount, 2, 'should return correct total error count')
-      assert.equal(errorStub.callCount, 2, 'should report each error')
+      assert.strictEqual(
+        errorCount,
+        2,
+        'should return correct total error count'
+      )
+      assert.strictEqual(errorStub.callCount, 2, 'should report each error')
       assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
 
       // Verify error reporting
-      assert.isTrue(
+      assert.strictEqual(
         errorStub.calledWith(
           'test.js:1 - test-rule-1 - Test error 1\nhttps://test-help-url-1.com',
           {
@@ -136,10 +140,11 @@ describe('linter', () => {
             title: 'Axe Linter'
           }
         ),
+        true,
         'should report first error correctly'
       )
 
-      assert.isTrue(
+      assert.strictEqual(
         errorStub.calledWith(
           'test.html:1 - test-rule-2 - Test error 2\nhttps://test-help-url-2.com',
           {
@@ -150,6 +155,7 @@ describe('linter', () => {
             title: 'Axe Linter'
           }
         ),
+        true,
         'should report second error correctly'
       )
     })
@@ -186,7 +192,11 @@ describe('linter', () => {
         linterConfig
       )
 
-      assert.equal(errorCount, 1, 'should return one error for single file')
+      assert.strictEqual(
+        errorCount,
+        1,
+        'should return one error for single file'
+      )
       assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
     })
 
@@ -204,9 +214,14 @@ describe('linter', () => {
         linterConfig
       )
 
-      assert.equal(errorCount, 0, 'should return zero errors for empty files')
-      assert.isTrue(
+      assert.strictEqual(
+        errorCount,
+        0,
+        'should return zero errors for empty files'
+      )
+      assert.strictEqual(
         debugStub.calledWith('Skipping empty file empty.js'),
+        true,
         'should log debug message'
       )
       assert.throws(() => mockAgent.assertNoPendingInterceptors())
@@ -227,8 +242,8 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
-        assert.equal(error.message, 'API Error')
+        assert.ok(error instanceof Error)
+        assert.strictEqual((error as Error).message, 'API Error')
         assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
       }
     })
@@ -245,8 +260,8 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
-        assert.equal(error.message, 'ENOENT')
+        assert.ok(error instanceof Error)
+        assert.strictEqual((error as Error).message, 'ENOENT')
         assert.throws(() => mockAgent.assertNoPendingInterceptors())
       }
     })
@@ -266,9 +281,9 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
-        assert.include((error as Error).message, 'fetch failed')
-        assert.equal((error as any).cause?.message, 'Network Error')
+        assert.ok(error instanceof Error)
+        assert.ok((error as Error).message.includes('fetch failed'))
+        assert.strictEqual((error as any).cause?.message, 'Network Error')
         assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
       }
     })
@@ -288,7 +303,7 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
+        assert.ok(error instanceof Error)
         assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
       }
     })
@@ -308,7 +323,7 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, linterConfig)
         assert.fail('should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
+        assert.ok(error instanceof Error)
         assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
       }
     })
@@ -336,26 +351,27 @@ describe('linter', () => {
         assert.fail('Should have thrown an error')
       } catch (error) {
         // Verify that the caught error is our non-Error object
-        assert.isFalse(
+        assert.strictEqual(
           error instanceof Error,
+          false,
           'Error should not be an Error instance'
         )
-        assert.deepEqual(
+        assert.deepStrictEqual(
           error,
           nonErrorObject,
           'Should be the original non-Error object'
         )
-        assert.equal(
+        assert.strictEqual(
           (error as any).type,
           'CustomError',
           'Should preserve custom properties'
         )
-        assert.equal(
+        assert.strictEqual(
           (error as any).details,
           'Something went wrong',
           'Should preserve error details'
         )
-        assert.equal(
+        assert.strictEqual(
           (error as any).statusCode,
           500,
           'Should preserve status code'
@@ -390,9 +406,9 @@ describe('linter', () => {
         await lintFiles(files, apiKey, axeLinterUrl, invalidLinterConfig)
         assert.fail('Should have thrown an error')
       } catch (error) {
-        assert.instanceOf(error, Error)
-        assert.include((error as Error).message, 'fetch failed')
-        assert.equal((error as any).cause?.message, 'Invalid config')
+        assert.ok(error instanceof Error)
+        assert.ok((error as Error).message.includes('fetch failed'))
+        assert.strictEqual((error as any).cause?.message, 'Invalid config')
         assert.doesNotThrow(() => mockAgent.assertNoPendingInterceptors())
       }
     })
