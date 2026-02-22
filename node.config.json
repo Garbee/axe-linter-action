@@ -2,6 +2,9 @@
   "$schema": "https://nodejs.org/dist/v24.13.0/docs/node-config-schema.json",
   "testRunner": {
     "experimental-test-coverage": true,
-    "experimental-test-module-mocks": true
+    "experimental-test-module-mocks": true,
+    "test-coverage-branches": 85,
+    "test-coverage-functions": 85,
+    "test-coverage-lines": 85
   }
 }

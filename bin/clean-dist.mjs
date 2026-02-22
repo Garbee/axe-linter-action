@@ -1,10 +1,10 @@
-import { rmSync } from "node:fs";
-import { resolve } from "node:path";
+import { rmSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const distPath = resolve(import.meta.dirname, '..', "dist");
+const distPath = resolve(import.meta.dirname, '..', 'dist')
 
 try {
-  rmSync(distPath, { recursive: true });
+  rmSync(distPath, { recursive: true })
 } catch (error) {
-  console.error(`Failed to clean dist directory: ${error.message}`);
+  console.error(`Failed to clean dist directory: ${error.message}`)
 }

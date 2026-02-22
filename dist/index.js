@@ -28917,6 +28917,7 @@ const FILE_PATTERNS = [
 ];
 async function getChangedFiles(token) {
 	const octokit = getOctokit(token);
+	console.log("GitHub context:", JSON.stringify(context, null, 2));
 	if (!context.payload.pull_request) {
 		debug("Not a pull request, checking push diff");
 		const base = context.payload.before;
