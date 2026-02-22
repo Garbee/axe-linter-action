@@ -9,7 +9,7 @@ import {
   type Dispatcher
 } from 'undici'
 import { lintFiles } from './linter.ts'
-import type { LinterResponse } from './types.ts'
+import type { LinterResponse } from './linter.ts'
 
 type MockResponses = Record<string, LinterResponse>
 

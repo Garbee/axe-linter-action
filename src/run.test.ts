@@ -5,7 +5,13 @@ import YAML from 'yaml'
 import run from './run.ts'
 import * as gitModule from './git.ts'
 import * as linterModule from './linter.ts'
-import type { Core } from './types.ts'
+import type { getInput, setFailed, debug } from '@actions/core'
+
+type Core = {
+  getInput: typeof getInput
+  setFailed: typeof setFailed
+  debug: typeof debug
+}
 
 describe('run', () => {
   let sandbox: sinon.SinonSandbox
@@ -21,9 +27,7 @@ describe('run', () => {
     mockCore = {
       getInput: sandbox.stub(),
       setFailed: sandbox.stub(),
-      info: sandbox.stub(),
-      debug: sandbox.stub(),
-      setOutput: sandbox.stub()
+      debug: sandbox.stub()
     }
 
     // Stub file system
@@ -63,7 +67,7 @@ describe('run', () => {
     // Setup linter response
     lintFilesStub.resolves(0)
 
-    await run(mockCore)
+    await run()
 
     // Verify inputs were processed correctly
     assert.strictEqual(
@@ -110,7 +114,7 @@ describe('run', () => {
     // Return empty file list
     getChangedFilesStub.resolves([])
 
-    await run(mockCore)
+    await run()
 
     assert.strictEqual(
       (mockCore.debug as sinon.SinonStub).calledWith('No files to lint'),
@@ -154,7 +158,7 @@ describe('run', () => {
 
     lintFilesStub.resolves(0)
 
-    await run(mockCore)
+    await run()
 
     // Verify debug message for missing config
     assert.strictEqual(
@@ -207,7 +211,7 @@ describe('run', () => {
 
     lintFilesStub.resolves(2)
 
-    await run(mockCore)
+    await run()
 
     assert.strictEqual(
       (mockCore.setFailed as sinon.SinonStub).calledWith(
@@ -237,7 +241,7 @@ describe('run', () => {
 
     lintFilesStub.resolves(1)
 
-    await run(mockCore)
+    await run()
 
     assert.strictEqual(
       (mockCore.setFailed as sinon.SinonStub).calledWith(
@@ -253,7 +257,7 @@ describe('run', () => {
       .withArgs('github_token', { required: true })
       .throws(new Error('Input required and not supplied: github_token'))
 
-    await run(mockCore)
+    await run()
 
     assert.strictEqual(
       (mockCore.setFailed as sinon.SinonStub).calledWith(
@@ -279,7 +283,7 @@ describe('run', () => {
     const error = new Error('Git error')
     getChangedFilesStub.rejects(error)
 
-    await run(mockCore)
+    await run()
 
     assert.strictEqual(
       (mockCore.setFailed as sinon.SinonStub).calledWith('Git error'),
@@ -302,7 +306,7 @@ describe('run', () => {
     // Simulate a non-Error object being thrown
     getChangedFilesStub.rejects({ foo: 'bar' })
 
-    await run(mockCore)
+    await run()
 
     // Verify setFailed was called with the correct message
     assert.strictEqual(

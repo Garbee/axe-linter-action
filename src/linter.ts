@@ -1,7 +1,24 @@
-import * as core from '@actions/core'
 import { readFileSync } from 'fs'
-import type { LinterResponse } from './types.ts'
+import { debug, error } from '@actions/core'
 import { pluralize } from './utils.ts'
+
+interface LinterError {
+  ruleId: string
+  lineNumber: number
+  column: number
+  endColumn: number
+  description: string
+  helpURL: string
+}
+
+interface LinterReport {
+  errors: LinterError[]
+}
+
+export interface LinterResponse {
+  error?: string
+  report: LinterReport
+}
 
 export async function lintFiles(
   files: string[],
@@ -16,7 +33,7 @@ export async function lintFiles(
 
     // Skip empty files
     if (!fileContents.trim()) {
-      core.debug(`Skipping empty file ${file}`)
+      debug(`Skipping empty file ${file}`)
       continue
     }
 
@@ -53,20 +70,20 @@ export async function lintFiles(
     totalErrors += errors.length
 
     // Report errors using GitHub annotations
-    for (const error of errors) {
-      core.error(
-        `${file}:${error.lineNumber} - ${error.ruleId} - ${error.description}\n${error.helpURL}`,
+    for (const err of errors) {
+      error(
+        `${file}:${err.lineNumber} - ${err.ruleId} - ${err.description}\n${err.helpURL}`,
         {
           file,
-          startLine: error.lineNumber,
-          startColumn: error.column,
-          endColumn: error.endColumn,
+          startLine: err.lineNumber,
+          startColumn: err.column,
+          endColumn: err.endColumn,
           title: 'Axe Linter'
         }
       )
     }
   }
 
-  core.debug(`Found ${totalErrors} error${pluralize(totalErrors)}`)
+  debug(`Found ${totalErrors} error${pluralize(totalErrors)}`)
   return totalErrors
 }

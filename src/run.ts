@@ -1,16 +1,16 @@
 import { readFileSync } from 'fs'
+import { getInput, setFailed, debug } from '@actions/core'
 import { parse } from 'yaml'
 import { lintFiles } from './linter.ts'
 import { getChangedFiles } from './git.ts'
-import type { Core, ActionInputs } from './types.ts'
 import { pluralize } from './utils.ts'
 
-async function run(core: Core): Promise<void> {
+async function run(): Promise<void> {
   try {
-    const inputs: ActionInputs = {
-      githubToken: core.getInput('github_token', { required: true }),
-      apiKey: core.getInput('api_key', { required: true }),
-      axeLinterUrl: core.getInput('axe_linter_url')
+    const inputs = {
+      githubToken: getInput('github_token', { required: true }),
+      apiKey: getInput('api_key', { required: true }),
+      axeLinterUrl: getInput('axe_linter_url')
     }
 
     // Remove trailing slash if present
@@ -19,7 +19,7 @@ async function run(core: Core): Promise<void> {
     const changedFiles = await getChangedFiles(inputs.githubToken)
 
     if (changedFiles.length === 0) {
-      core.debug('No files to lint')
+      debug('No files to lint')
       return
     }
 
@@ -33,11 +33,11 @@ async function run(core: Core): Promise<void> {
       }
     } catch (error) {
       if (error instanceof Error) {
-        core.debug(
+        debug(
           `Error loading axe-linter.yml no config found or invalid config: ${error.message}`
         )
       } else {
-        core.debug(
+        debug(
           'Error loading axe-linter.yml no config found or invalid config: ' +
             error
         )
@@ -53,15 +53,15 @@ async function run(core: Core): Promise<void> {
     )
 
     if (errorCount > 0) {
-      core.setFailed(
+      setFailed(
         `Found ${errorCount} accessibility issue${pluralize(errorCount)}`
       )
     }
   } catch (error) {
     if (error instanceof Error) {
-      core.setFailed(error.message)
+      setFailed(error.message)
     } else {
-      core.setFailed('An unexpected error occurred: ' + JSON.stringify(error))
+      setFailed('An unexpected error occurred: ' + JSON.stringify(error))
     }
   }
 }

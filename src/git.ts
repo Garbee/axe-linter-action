@@ -1,5 +1,5 @@
-import * as github from '@actions/github'
-import * as core from '@actions/core'
+import { getOctokit, context } from '@actions/github'
+import { debug } from '@actions/core'
 import { minimatch } from 'minimatch'
 
 const FILE_PATTERNS = [
@@ -15,11 +15,10 @@ const FILE_PATTERNS = [
 ] as const
 
 export async function getChangedFiles(token: string): Promise<string[]> {
-  const octokit = github.getOctokit(token)
-  const { context } = github
+  const octokit = getOctokit(token)
 
   if (!context.payload.pull_request) {
-    core.debug('Not a pull request, checking push diff')
+    debug('Not a pull request, checking push diff')
     const base = context.payload.before
     const head = context.payload.after
 
