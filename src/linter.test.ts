@@ -8,8 +8,8 @@ import {
   getGlobalDispatcher,
   type Dispatcher
 } from 'undici'
-import { lintFiles } from './linter'
-import type { LinterResponse } from './types'
+import { lintFiles } from './linter.ts'
+import type { LinterResponse } from './types.ts'
 
 type MockResponses = Record<string, LinterResponse>
 

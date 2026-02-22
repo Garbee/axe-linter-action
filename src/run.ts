@@ -1,9 +1,9 @@
 import { readFileSync } from 'fs'
 import { parse } from 'yaml'
-import { lintFiles } from './linter'
-import { getChangedFiles } from './git'
-import type { Core, ActionInputs } from './types'
-import { pluralize } from './utils'
+import { lintFiles } from './linter.ts'
+import { getChangedFiles } from './git.ts'
+import type { Core, ActionInputs } from './types.ts'
+import { pluralize } from './utils.ts'
 
 async function run(core: Core): Promise<void> {
   try {

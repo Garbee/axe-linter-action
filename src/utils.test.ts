@@ -1,6 +1,6 @@
 import 'mocha'
 import assert from 'node:assert/strict'
-import { pluralize } from './utils'
+import { pluralize } from './utils.ts'
 
 describe('pluralize', () => {
   it('should return the plural form of a word', () => {

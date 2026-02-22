@@ -1,9 +1,9 @@
-const globals = require('globals')
-const eslint = require('@eslint/js')
-const tseslint = require('typescript-eslint')
-const mocha = require('eslint-plugin-mocha')
+import globals from 'globals'
+import eslint from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import mocha from 'eslint-plugin-mocha'
 
-module.exports = [
+export default [
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {

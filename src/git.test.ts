@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import sinon from 'sinon'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { getChangedFiles } from './git'
+import { getChangedFiles } from './git.ts'
 
 describe('git', () => {
   const token = 'test-token'

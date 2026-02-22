@@ -2,10 +2,10 @@ import 'mocha'
 import assert from 'node:assert/strict'
 import * as sinon from 'sinon'
 import YAML from 'yaml'
-import run from './run'
-import * as gitModule from './git'
-import * as linterModule from './linter'
-import { Core } from './types'
+import run from './run.ts'
+import * as gitModule from './git.ts'
+import * as linterModule from './linter.ts'
+import type { Core } from './types.ts'
 
 describe('run', () => {
   let sandbox: sinon.SinonSandbox
