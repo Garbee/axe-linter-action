@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
+          cache: 'pnpm'
       - name: Install Actionlint
         env:
           TMP_DIR: ${{ runner.temp }}
@@ -65,4 +65,4 @@ jobs:
           rm "$tarball" "$TMP_DIR/zizmor"
           zizmor --version
       - name: Install JavaScript dependencies
-        run: yarn install --frozen-lockfile --ignore-scripts
+        run: pnpm install

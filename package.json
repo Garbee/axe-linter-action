@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "ncc build src/index.ts --license licenses.txt",
+    "build": "ncc build src/index.ts",
+    "postbuild": "pnpm-licenses generate-disclaimer --prod --output-file dist/licenses.txt",
     "lint": "eslint .",
     "fmt": "prettier --write .",
     "prepare": "husky",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@quantco/pnpm-licenses": "^2.2.3",
     "@types/chai": "^5.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.1",
