@@ -1,0 +1,68 @@
+name: 'Copilot Setup Steps'
+
+# Allow manual runs for testing before a PR is opened. When a PR is opened, require it runs
+# for validation before merge.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
+permissions: {}
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    name: Copilot Setup Steps
+    # Note: Do not try to run inside of a container yet. That causes all the setup scripts
+    # by Copilot to fail since that triggers `sh` instead of `bash` for runs. Setting
+    # defaults to bash does not fix it.
+    runs-on: ubuntu-24.04
+
+    # Set the permissions to the lowest permissions possible needed for your steps.
+    # Copilot will be given its own token for its operations.
+    permissions:
+      contents: read # To clone the repository
+
+    # You can define any steps you want, and they will run before the agent starts.
+    # If you do not check out your code, Copilot will do this for you.
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Setup NodeJS
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+      - name: Install Actionlint
+        env:
+          TMP_DIR: ${{ runner.temp }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euCo pipefail
+          tarball="$TMP_DIR/actionlint.tar.gz"
+          gh release download --repo rhysd/actionlint --pattern "actionlint_*_linux_amd64.tar.gz" --output "$tarball"
+          tar -xzf "$tarball" -C "$TMP_DIR"
+          install -D "$TMP_DIR/actionlint" /usr/local/bin
+          rm "$tarball" "$TMP_DIR/actionlint"
+          actionlint --version
+      - name: Install Zizmor
+        env:
+          TMP_DIR: ${{ runner.temp }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euCo pipefail
+          tarball="$TMP_DIR/zizmor.tar.gz"
+          gh release download --repo zizmorcore/zizmor --pattern "zizmor-x86_64-unknown-linux-gnu.tar.gz" --output "$tarball"
+          tar -xzf "$tarball" -C "$TMP_DIR"
+          install -D "$TMP_DIR/zizmor" /usr/local/bin
+          rm "$tarball" "$TMP_DIR/zizmor"
+          zizmor --version
+      - name: Install JavaScript dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
