@@ -1,7 +1,6 @@
 import globals from 'globals'
 import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import mocha from 'eslint-plugin-mocha'
 
 export default [
   eslint.configs.recommended,
@@ -15,8 +14,7 @@ export default [
       }
     },
     plugins: {
-      '@typescript-eslint': tseslint.plugin,
-      mocha
+      '@typescript-eslint': tseslint.plugin
     }
   },
   {
@@ -28,14 +26,7 @@ export default [
   },
   {
     files: ['src/**/*.test.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
-      'mocha/no-exclusive-tests': 'error',
-      'mocha/no-setup-in-describe': 'off',
-      'mocha/max-top-level-suites': 'off',
-      'mocha/no-mocha-arrows': 'off'
-    }
+    rules: {}
   },
   {
     ignores: ['**/node_modules/', '**/dist/', '**/coverage/', '**/.nyc_output/']

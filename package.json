@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "fmt": "prettier --write .",
     "prepare": "husky",
+    "node:test": "node --experimental-default-config-file --test src/*.node.test.ts",
     "test": "mocha 'src/**/*.test.ts'",
     "coverage": "c8 yarn test"
   },
