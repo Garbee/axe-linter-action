@@ -593,6 +593,143 @@ describe('git', () => {
     })
   })
 
+  describe('merge_group events', () => {
+    it('should compare base_sha against head_sha and return supported files', async () => {
+      mockContext.eventName = 'merge_group'
+      mockContext.payload.merge_group = {
+        base_sha: 'base-sha',
+        head_sha: 'head-sha'
+      }
+
+      const mockFiles = [
+        { filename: 'src/app.js', status: 'modified' },
+        { filename: 'docs/guide.md', status: 'added' },
+        { filename: 'src/styles.css', status: 'modified' }
+      ]
+
+      mockOctokit.rest.repos.compareCommits.mock.mockImplementation(() =>
+        Promise.resolve({ data: { files: mockFiles } })
+      )
+
+      const result = await getChangedFiles(token)
+
+      assert.ok(
+        wasCalledWith(mockOctokit.rest.repos.compareCommits, {
+          owner: 'test-owner',
+          repo: 'test-repo',
+          base: 'base-sha',
+          head: 'head-sha'
+        }),
+        'compareCommits should be called with merge_group base and head SHAs'
+      )
+
+      assert.deepEqual(result, ['src/app.js', 'docs/guide.md'])
+      assert.ok(!result.includes('src/styles.css'))
+      assert.ok(
+        wasCalledWith(
+          debugStub,
+          'Merge group event, comparing base-sha...head-sha'
+        )
+      )
+    })
+
+    it('should exclude deleted files in merge_group event', async () => {
+      mockContext.eventName = 'merge_group'
+      mockContext.payload.merge_group = {
+        base_sha: 'base-sha',
+        head_sha: 'head-sha'
+      }
+
+      const mockFiles = [
+        { filename: 'kept.js', status: 'modified' },
+        { filename: 'gone.js', status: 'removed' },
+        { filename: 'added.html', status: 'added' }
+      ]
+
+      mockOctokit.rest.repos.compareCommits.mock.mockImplementation(() =>
+        Promise.resolve({ data: { files: mockFiles } })
+      )
+
+      const result = await getChangedFiles(token)
+
+      assert.deepEqual(result, ['kept.js', 'added.html'])
+      assert.ok(!result.includes('gone.js'))
+    })
+
+    it('should warn when merge_group diff returns 300 or more files', async () => {
+      mockContext.eventName = 'merge_group'
+      mockContext.payload.merge_group = {
+        base_sha: 'base-sha',
+        head_sha: 'head-sha'
+      }
+
+      const mockFiles = Array.from({ length: 300 }, (_, i) => ({
+        filename: `file${i}.js`,
+        status: 'added'
+      }))
+
+      mockOctokit.rest.repos.compareCommits.mock.mockImplementation(() =>
+        Promise.resolve({ data: { files: mockFiles } })
+      )
+
+      await getChangedFiles(token)
+
+      assert.strictEqual(warningStub.mock.callCount(), 1)
+      assert.ok(
+        wasCalledWith(
+          warningStub,
+          'This merge group changed at least 300 files. The GitHub API only returns up to the first 300 files when comparing commits, so some files may not be linted.'
+        )
+      )
+    })
+
+    it('should fall through to push handler when merge_group payload is malformed', async () => {
+      mockContext.eventName = 'merge_group'
+      mockContext.payload.merge_group = { base_sha: 'base-sha' }
+      mockContext.payload.before = 'before-sha'
+      mockContext.payload.after = 'after-sha'
+
+      mockOctokit.rest.repos.compareCommits.mock.mockImplementation(() =>
+        Promise.resolve({ data: { files: [{ filename: 'src/app.js' }] } })
+      )
+
+      await getChangedFiles(token)
+
+      assert.ok(
+        wasCalledWith(mockOctokit.rest.repos.compareCommits, {
+          owner: 'test-owner',
+          repo: 'test-repo',
+          base: 'before-sha',
+          head: 'after-sha'
+        }),
+        'should use push payload SHAs, not undefined merge_group SHAs'
+      )
+    })
+
+    it('should not treat a regular branch push as a merge_group event', async () => {
+      mockContext.payload.before = 'old-sha'
+      mockContext.payload.after = 'new-sha'
+
+      mockOctokit.rest.repos.compareCommits.mock.mockImplementation(() =>
+        Promise.resolve({ data: { files: [{ filename: 'src/app.js' }] } })
+      )
+
+      await getChangedFiles(token)
+
+      assert.ok(
+        wasCalledWith(mockOctokit.rest.repos.compareCommits, {
+          owner: 'test-owner',
+          repo: 'test-repo',
+          base: 'old-sha',
+          head: 'new-sha'
+        })
+      )
+      assert.ok(
+        wasCalledWith(debugStub, 'Not a pull request, checking push diff')
+      )
+    })
+  })
+
   describe('file pattern matching', () => {
     it('should match JavaScript files correctly', async () => {
       const mockFiles = [

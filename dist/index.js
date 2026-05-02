@@ -87263,6 +87263,18 @@ function getPushedTagName() {
   }
   return null
 }
+function getMergeGroupSHAs() {
+  const { /* context */ _: context } = github_namespaceObject
+  const mergeGroup = context.payload.merge_group
+  if (
+    mergeGroup &&
+    typeof mergeGroup.base_sha === 'string' &&
+    typeof mergeGroup.head_sha === 'string'
+  ) {
+    return { base: mergeGroup.base_sha, head: mergeGroup.head_sha }
+  }
+  return null
+}
 async function getPreviousTagName(octokit, owner, repo, currentTag) {
   // REST listTags returns alphabetical order, so v10 sorts before v2.
   // GraphQL with TAG_COMMIT_DATE gives a chronological list we can scan.
@@ -87331,6 +87343,29 @@ async function getTagFiles(octokit, tagName) {
       .map((file) => file.filename) || []
   )
 }
+async function getMergeGroupFiles(octokit, baseSha, headSha) {
+  const { /* context */ _: context } = github_namespaceObject
+  debug(`Merge group event, comparing ${baseSha}...${headSha}`)
+  const response = await octokit.rest.repos.compareCommits({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    base: baseSha,
+    head: headSha
+  })
+  const files = response.data.files
+  if (files && files.length >= 300) {
+    warning(
+      'This merge group changed at least 300 files. The GitHub API only returns up to the first 300 files when comparing commits, so some files may not be linted.'
+    )
+  }
+  return (
+    files
+      ?.filter(
+        (file) => file.status !== 'removed' && isSupportedFile(file.filename)
+      )
+      .map((file) => file.filename) || []
+  )
+}
 async function getPushFiles(octokit) {
   const { /* context */ _: context } = github_namespaceObject
   debug('Not a pull request, checking push diff')
@@ -87359,6 +87394,10 @@ async function getChangedFiles(token) {
   const { /* context */ _: context } = github_namespaceObject
   if (context.payload.pull_request) {
     return getPullRequestFiles(octokit, context.payload.pull_request.number)
+  }
+  const mergeGroupSHAs = getMergeGroupSHAs()
+  if (mergeGroupSHAs) {
+    return getMergeGroupFiles(octokit, mergeGroupSHAs.base, mergeGroupSHAs.head)
   }
   const tagName = getPushedTagName()
   if (tagName) {

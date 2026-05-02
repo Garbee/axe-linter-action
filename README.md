@@ -21,7 +21,9 @@ Create a file in your repository called `.github/workflows/axe-linter.yml` with 
 ```yaml
 name: Lint for accessibility issues
 
-on: [pull_request]
+on:
+  pull_request:
+  merge_group:
 
 jobs:
   build:
@@ -35,6 +37,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+The action supports GitHub merge queues: when triggered by a `merge_group` event, it lints the files changed between `merge_group.base_sha` and `merge_group.head_sha` so the merge candidate is checked before it lands.
+
 ## Example Usage for private repository.
 
 Create a file in your repository called `.github/workflows/axe-linter.yml` with the following contents:
@@ -42,7 +46,9 @@ Create a file in your repository called `.github/workflows/axe-linter.yml` with 
 ```yaml
 name: Lint for accessibility issues
 
-on: [pull_request]
+on:
+  pull_request:
+  merge_group:
 
 jobs:
   build:

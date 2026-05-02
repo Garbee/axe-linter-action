@@ -40,6 +40,19 @@ function getPushedTagName(): string | null {
   return null
 }
 
+function getMergeGroupSHAs(): { base: string; head: string } | null {
+  const { context } = github
+  const mergeGroup = context.payload.merge_group
+  if (
+    mergeGroup &&
+    typeof mergeGroup.base_sha === 'string' &&
+    typeof mergeGroup.head_sha === 'string'
+  ) {
+    return { base: mergeGroup.base_sha, head: mergeGroup.head_sha }
+  }
+  return null
+}
+
 async function getPreviousTagName(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
@@ -139,6 +152,37 @@ async function getTagFiles(
   )
 }
 
+async function getMergeGroupFiles(
+  octokit: Octokit,
+  baseSha: string,
+  headSha: string
+): Promise<string[]> {
+  const { context } = github
+  core.debug(`Merge group event, comparing ${baseSha}...${headSha}`)
+  const response = await octokit.rest.repos.compareCommits({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    base: baseSha,
+    head: headSha
+  })
+
+  const files = response.data.files
+
+  if (files && files.length >= 300) {
+    core.warning(
+      'This merge group changed at least 300 files. The GitHub API only returns up to the first 300 files when comparing commits, so some files may not be linted.'
+    )
+  }
+
+  return (
+    files
+      ?.filter(
+        (file) => file.status !== 'removed' && isSupportedFile(file.filename)
+      )
+      .map((file) => file.filename) || []
+  )
+}
+
 async function getPushFiles(octokit: Octokit): Promise<string[]> {
   const { context } = github
   core.debug('Not a pull request, checking push diff')
@@ -172,6 +216,11 @@ export async function getChangedFiles(token: string): Promise<string[]> {
 
   if (context.payload.pull_request) {
     return getPullRequestFiles(octokit, context.payload.pull_request.number)
+  }
+
+  const mergeGroupSHAs = getMergeGroupSHAs()
+  if (mergeGroupSHAs) {
+    return getMergeGroupFiles(octokit, mergeGroupSHAs.base, mergeGroupSHAs.head)
   }
 
   const tagName = getPushedTagName()
