@@ -1,5 +1,11 @@
 {
   "permissions": {
-    "allow": ["Bash(pnpm lint *)", "Bash(pnpm build *)", "Bash(pnpm test *)"]
+    "allow": [
+      "Bash(pnpm lint *)",
+      "Bash(pnpm build *)",
+      "Bash(pnpm test *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)"
+    ]
   }
 }

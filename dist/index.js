@@ -87249,20 +87249,6 @@ function isSupportedFile(filename) {
     )
   )
 }
-function getPushedTagName() {
-  const { /* context */ _: context } = github_namespaceObject
-  if (context.ref?.startsWith(TAG_REF_PREFIX)) {
-    return context.ref.slice(TAG_REF_PREFIX.length)
-  }
-  if (
-    context.eventName === 'create' &&
-    context.payload.ref_type === 'tag' &&
-    typeof context.payload.ref === 'string'
-  ) {
-    return context.payload.ref
-  }
-  return null
-}
 function getMergeGroupSHAs() {
   const { /* context */ _: context } = github_namespaceObject
   const mergeGroup = context.payload.merge_group
@@ -87392,18 +87378,37 @@ async function getPushFiles(octokit) {
 async function getChangedFiles(token) {
   const octokit = getOctokit(token)
   const { /* context */ _: context } = github_namespaceObject
-  if (context.payload.pull_request) {
-    return getPullRequestFiles(octokit, context.payload.pull_request.number)
+  switch (context.eventName) {
+    case 'pull_request':
+    case 'pull_request_target': {
+      return getPullRequestFiles(octokit, context.payload.pull_request.number)
+    }
+    case 'merge_group': {
+      const shas = getMergeGroupSHAs()
+      if (shas) {
+        return getMergeGroupFiles(octokit, shas.base, shas.head)
+      }
+      return getPushFiles(octokit)
+    }
+    case 'create': {
+      if (
+        context.payload.ref_type === 'tag' &&
+        typeof context.payload.ref === 'string'
+      ) {
+        return getTagFiles(octokit, context.payload.ref)
+      }
+      return getPushFiles(octokit)
+    }
+    case 'push': {
+      if (context.ref?.startsWith(TAG_REF_PREFIX)) {
+        return getTagFiles(octokit, context.ref.slice(TAG_REF_PREFIX.length))
+      }
+      return getPushFiles(octokit)
+    }
+    default: {
+      return getPushFiles(octokit)
+    }
   }
-  const mergeGroupSHAs = getMergeGroupSHAs()
-  if (mergeGroupSHAs) {
-    return getMergeGroupFiles(octokit, mergeGroupSHAs.base, mergeGroupSHAs.head)
-  }
-  const tagName = getPushedTagName()
-  if (tagName) {
-    return getTagFiles(octokit, tagName)
-  }
-  return getPushFiles(octokit)
 } // CONCATENATED MODULE: ./src/run.ts
 
 function getOnlyFiles() {

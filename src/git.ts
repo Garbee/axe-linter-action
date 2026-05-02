@@ -22,24 +22,6 @@ function isSupportedFile(filename: string): boolean {
   return !hasDotSegment && FILE_EXTENSIONS.has(extname(filename).toLowerCase())
 }
 
-function getPushedTagName(): string | null {
-  const { context } = github
-
-  if (context.ref?.startsWith(TAG_REF_PREFIX)) {
-    return context.ref.slice(TAG_REF_PREFIX.length)
-  }
-
-  if (
-    context.eventName === 'create' &&
-    context.payload.ref_type === 'tag' &&
-    typeof context.payload.ref === 'string'
-  ) {
-    return context.payload.ref
-  }
-
-  return null
-}
-
 function getMergeGroupSHAs(): { base: string; head: string } | null {
   const { context } = github
   const mergeGroup = context.payload.merge_group
@@ -214,19 +196,39 @@ export async function getChangedFiles(token: string): Promise<string[]> {
   const octokit = github.getOctokit(token)
   const { context } = github
 
-  if (context.payload.pull_request) {
-    return getPullRequestFiles(octokit, context.payload.pull_request.number)
-  }
+  switch (context.eventName) {
+    case 'pull_request':
+    case 'pull_request_target': {
+      return getPullRequestFiles(octokit, context.payload.pull_request!.number)
+    }
 
-  const mergeGroupSHAs = getMergeGroupSHAs()
-  if (mergeGroupSHAs) {
-    return getMergeGroupFiles(octokit, mergeGroupSHAs.base, mergeGroupSHAs.head)
-  }
+    case 'merge_group': {
+      const shas = getMergeGroupSHAs()
+      if (shas) {
+        return getMergeGroupFiles(octokit, shas.base, shas.head)
+      }
+      return getPushFiles(octokit)
+    }
 
-  const tagName = getPushedTagName()
-  if (tagName) {
-    return getTagFiles(octokit, tagName)
-  }
+    case 'create': {
+      if (
+        context.payload.ref_type === 'tag' &&
+        typeof context.payload.ref === 'string'
+      ) {
+        return getTagFiles(octokit, context.payload.ref)
+      }
+      return getPushFiles(octokit)
+    }
 
-  return getPushFiles(octokit)
+    case 'push': {
+      if (context.ref?.startsWith(TAG_REF_PREFIX)) {
+        return getTagFiles(octokit, context.ref.slice(TAG_REF_PREFIX.length))
+      }
+      return getPushFiles(octokit)
+    }
+
+    default: {
+      return getPushFiles(octokit)
+    }
+  }
 }

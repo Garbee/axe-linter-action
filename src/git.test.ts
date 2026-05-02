@@ -92,6 +92,7 @@ describe('git', () => {
 
   describe('getChangedFiles', () => {
     it('should handle pull request files', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       const mockFiles = [
@@ -171,6 +172,7 @@ describe('git', () => {
     })
 
     it('should handle empty file lists', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       mockOctokit.paginate.mock.mockImplementation(() => Promise.resolve([]))
@@ -196,6 +198,7 @@ describe('git', () => {
     })
 
     it('should filter out unsupported file types', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       const mockFiles = [
@@ -215,6 +218,7 @@ describe('git', () => {
     })
 
     it('should throw an error when API call fails', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       const error = new Error('API Error')
@@ -229,6 +233,7 @@ describe('git', () => {
     })
 
     it('should exclude deleted files in pull request', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       const mockFiles = [
@@ -276,6 +281,7 @@ describe('git', () => {
     })
 
     it('should handle files with different statuses', async () => {
+      mockContext.eventName = 'pull_request'
       mockContext.payload.pull_request = { number: 123 }
 
       const mockFiles = [
